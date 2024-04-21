@@ -2,6 +2,8 @@ const express = require('express')
 const computersRouter = require('./routes/computers.routes.js')
 const usersRouter = require('./routes/users.routes.ls')
 const app = express()
+const cors = require('cors');
+app.use(cors());
 
 const PORT = process.env.PORT || 5000
 

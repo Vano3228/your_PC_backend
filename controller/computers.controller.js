@@ -54,6 +54,7 @@ class ComputersController {
         res.json(computer.rows[0])
     }
 
+
     async updateComputers(req, res) {
         const {
             id,
