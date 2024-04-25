@@ -18,7 +18,8 @@ class ComputersController {
                 cpu_id, 
                 gpu_id, 
                 motherboard_id, 
-                pc_case_id, ram_id, 
+                pc_case_id, 
+                ram_id, 
                 power_supply_id, 
                 cooler_id, 
                 hard_drive_id, 
@@ -46,6 +47,12 @@ class ComputersController {
     async getRecommendedComputers(req, res) {
         const recommendedComputers = await db.query(`SELECT * FROM computers WHERE is_recommended`)
         res.json(recommendedComputers.rows)
+    }
+
+    async getComputersByUserID(req, res) {
+        const userID = req.params.userID
+        const ComputersByUserID = await db.query(`SELECT * FROM computers WHERE creator_id = ${userID}`)
+        res.json(ComputersByUserID.rows)
     }
 
     async getOneComputer(req, res) {

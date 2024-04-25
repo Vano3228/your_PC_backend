@@ -1,10 +1,11 @@
 const db = require('../db')
+const bcrypt = require('bcryptjs')
 class ComputersController {
     async createUser(req, res) {
         const {login, mail, password} = req.body
         const newUser = await db.query (
             `INSERT INTO users (login, mail, password) VALUES ($1, $2, $3) RETURNING *`,
-            [login, mail, password]
+            [login, mail, bcrypt.hashSync(password)]
         )
         res.json(newUser.rows[0])
     }
