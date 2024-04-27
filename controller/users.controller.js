@@ -25,7 +25,7 @@ class ComputersController {
     async loginUser(req, res) {
         const { login, password } = req.body;
         try {
-            const dbResult = await db.query(`SELECT password FROM users WHERE login = $1`, [login]);
+            const dbResult = await db.query(`SELECT * FROM users WHERE login = $1`, [login]);
             if (dbResult.rows.length === 0) {
                 return res.json('fail');
             }
@@ -37,7 +37,13 @@ class ComputersController {
                     return res.json('fail');
                 }
                 if (result) {
-                    return res.json('success');
+                    const resObj = {
+                        user_id: dbResult.rows[0].id,
+                        login,
+                        register_data: dbResult.rows[0].register_date,
+                        role: dbResult.rows[0].role
+                    }
+                    return res.json(resObj);
                 } else {
                     return res.json('fail');
                 }
