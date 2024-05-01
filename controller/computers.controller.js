@@ -15,11 +15,11 @@ class ComputersController {
             hard_drive_id,
             creator_id
         } = req.body
-        const newComputer = await db.query (
+        const newComputer = await db.query(
             `INSERT INTO computers (
                 pc_name,
                 description,
-                pc_type
+                pc_type,
                 cpu_id, 
                 gpu_id, 
                 motherboard_id, 
@@ -43,7 +43,7 @@ class ComputersController {
                 hard_drive_id,
                 creator_id]
                 )
-        res.json(newComputer.rows[0])
+        res.json('success')
     }
 
     async getAllComputers(req, res) {
