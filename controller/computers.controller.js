@@ -1,6 +1,10 @@
 const db = require('../db')
+const components = [
+    'cpu', 'gpu', 'ram', 'motherboard', 'cooler', 'pc_case', 'power_supply', 'hard_drive'
+];
 class ComputersController {
-    async createComputer(req, res) {
+
+    static async createComputer(req, res) {
         const {
             pc_name,
             description,
@@ -29,82 +33,55 @@ class ComputersController {
                 cooler_id, 
                 hard_drive_id, 
                 creator_id
-                ) values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING *`,  [
-                pc_name,
-                description,
-                pc_type,
-                cpu_id,
-                gpu_id,
-                motherboard_id,
-                pc_case_id,
-                ram_id,
-                power_supply_id,
-                cooler_id,
-                hard_drive_id,
-                creator_id]
-                )
+                ) values (
+                '${pc_name}', 
+                '${description}', 
+                '${pc_type}', 
+                '${cpu_id}', 
+                '${gpu_id}', 
+                '${motherboard_id}', 
+                '${pc_case_id}', 
+                '${ram_id}', 
+                '${power_supply_id}', 
+                '${cooler_id}', 
+                '${hard_drive_id}', 
+                '${creator_id}') 
+                RETURNING *`)
         res.json('success')
     }
 
-    async getAllComputers(req, res) {
-        const allComputers = await db.query(`SELECT * FROM computers`)
-        res.json(allComputers.rows)
-    }
-
-    async getRecommendedComputers(req, res) {
-        const recommendedComputers = await db.query(`SELECT * FROM computers WHERE is_recommended`)
-        res.json(recommendedComputers.rows)
-    }
-
-    async getComputersByUserID(req, res) {
-        const userID = req.params.userID
-        const ComputersByUserID = await db.query(`SELECT * FROM computers WHERE creator_id = ${userID}`)
-        res.json(ComputersByUserID.rows)
-    }
-
-    async getOneComputer(req, res) {
-        const id = req.params.id
-        const computerReq = await db.query(`SELECT * FROM computers WHERE id = $1`, [id])
-        const computer_with_ids = computerReq.rows[0]
-        const computer_with_objects = {
-            pc_id: computer_with_ids.id,
-            pc_name: computer_with_ids.pc_name,
-            pc_type: computer_with_ids.pc_type,
-            description: computer_with_ids.description,
-            creator_id: computer_with_ids.creator_id,
-            created_at: computer_with_ids.created_at
+    static async getComputers(req, res) {
+        const {type, userID} = req.body
+        const typeObj = {
+            all: '',
+            recommended: 'WHERE is_recommended',
+            user: `WHERE creator_id = ${userID}`
         }
-        const cpuReq = await db.query(`SELECT * FROM cpu WHERE id = $1`, [computer_with_ids.cpu_id])
-        computer_with_objects.cpu = cpuReq.rows[0]
+        const respPC = await db.query(`SELECT * FROM computers ${typeObj[type]}`)
 
-        const gpuReq = await db.query(`SELECT * FROM gpu WHERE id = $1`, [computer_with_ids.gpu_id])
-        computer_with_objects.gpu = gpuReq.rows[0]
+        const promises = respPC.rows.map(async (el) => await ComputersController.getOneComputer(el.id));
+        const PCwithoutPrices = await Promise.all(promises);
 
-        const ramReq = await db.query(`SELECT * FROM ram WHERE id = $1`, [computer_with_ids.ram_id])
-        computer_with_objects.ram = ramReq.rows[0]
-
-        const motherboardReq = await db.query(`SELECT * FROM motherboard WHERE id = $1`, [computer_with_ids.motherboard_id])
-        computer_with_objects.motherboard = motherboardReq.rows[0]
-
-        const coolerReq = await db.query(`SELECT * FROM cooler WHERE id = $1`, [computer_with_ids.cooler_id])
-        computer_with_objects.cooler = coolerReq.rows[0]
-
-        const pc_caseReq = await db.query(`SELECT * FROM pc_case WHERE id = $1`, [computer_with_ids.pc_case_id])
-        computer_with_objects.pc_case = pc_caseReq.rows[0]
-
-        const power_supplyReq = await db.query(`SELECT * FROM power_supply WHERE id = $1`, [computer_with_ids.power_supply_id])
-        computer_with_objects.power_supply = power_supplyReq.rows[0]
-
-        const hard_driveReq = await db.query(`SELECT * FROM hard_drive WHERE id = $1`, [computer_with_ids.hard_drive_id])
-        computer_with_objects.hard_drive = hard_driveReq.rows[0]
-
-        return res.json(computer_with_objects)
+        res.json(PCwithoutPrices);
     }
 
+    static async recommendPC(req, res) {
+        const pc_id = req.params.pc_id
+        const recommendPCReq = await db.query(`
+            UPDATE computers 
+            SET is_recommended = 'true' 
+            WHERE id = '${pc_id}' 
+            RETURNING *`
+        )
+        res.json(recommendPCReq.rows[0] && `Сборка ${pc_id} теперь рекоммендованая!`)
+    }
 
-    async updateComputers(req, res) {
+    static async updateComputers(req, res) {
         const {
-            id,
+            pc_id,
+            pc_name,
+            description,
+            pc_type,
             cpu_id,
             gpu_id,
             motherboard_id,
@@ -113,43 +90,73 @@ class ComputersController {
             power_supply_id,
             cooler_id,
             hard_drive_id,
-            creator_id,
-            is_completed
+            creator_id
         } = req.body
 
-        const updatedComputer = await db.query(`UPDATE computers set 
-            cpu_id = $1,
-            gpu_id = $2,
-            motherboard_id = $3,
-            pc_case_id = $4,
-            ram_id = $5,
-            power_supply_id = $6,
-            cooler_id = $7,
-            hard_drive_id = $8,
-            creator_id = $9,
-            is_completed = $10
-            WHERE id = $11 RETURNING *`, [
-            cpu_id,
-            gpu_id,
-            motherboard_id,
-            pc_case_id,
-            ram_id,
-            power_supply_id,
-            cooler_id,
-            hard_drive_id,
-            creator_id,
-            is_completed,
-            id
-        ])
-        res.json(updatedComputer.rows[0])
+        const updatedComputer = await db.query(`UPDATE computers SET 
+            cpu_id = '${cpu_id}',
+            gpu_id = '${gpu_id}',
+            motherboard_id = '${motherboard_id}',
+            pc_case_id = '${pc_case_id}',
+            ram_id = '${ram_id}',
+            power_supply_id = '${power_supply_id}',
+            cooler_id = '${cooler_id}',
+            hard_drive_id = '${hard_drive_id}',
+            creator_id = '${creator_id}',
+            pc_name = '${pc_name}',
+            pc_type = '${pc_type}',
+            description = '${description}'
+            WHERE id = '${pc_id}'
+            RETURNING *`)
+
+        if (updatedComputer.rows[0]) res.json('update')
     }
 
-    async deleteComputer(req, res) {
+    static async deleteComputer(req, res) {
+        console.log(req.params)
         const id = req.params.id
         const delComputer = await db.query(`DELETE FROM computers WHERE id = $1`, [id])
-        res.json(`success delete ${id} computer`)
+        res.json(`Компьютер ${id} успешно удален`)
     }
 
+
+    static async getOneComputer(id) {
+        const computerReq = await db.query(`SELECT * FROM computers WHERE id = $1`, [id]);
+        const computer_with_ids = computerReq.rows[0];
+
+        const computer_with_objects = {
+            pc_id: computer_with_ids.id,
+            title: computer_with_ids.pc_name,
+            type: computer_with_ids.pc_type,
+            description: computer_with_ids.description,
+            creator_id: computer_with_ids.creator_id,
+            created_at: computer_with_ids.created_at,
+            is_recommended: computer_with_ids.is_recommended,
+            pc_price: 0
+        };
+
+        for (const component of components) {
+            const componentReq = await db.query(`
+            SELECT ${component}.*, min_price.price AS price, min_price.shop, min_price.url 
+            FROM ${component}
+            LEFT JOIN (
+                SELECT ${component}_id, shop, price, url
+                FROM ${component}_prices
+                WHERE price = (
+                        SELECT MIN(price)
+                        FROM ${component}_prices
+                        WHERE ${component}_id = $1)
+            ) AS min_price ON ${component}.id = min_price.${component}_id
+            WHERE ${component}.id = $1;
+        `, [computer_with_ids[`${component}_id`]]);
+
+            computer_with_objects[component] = componentReq.rows[0];
+            computer_with_objects.pc_price += componentReq.rows[0].price
+        }
+        console.log(computer_with_objects)
+        return computer_with_objects;
+    }
 }
 
-module.exports = new ComputersController()
+
+module.exports = ComputersController

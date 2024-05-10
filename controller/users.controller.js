@@ -12,7 +12,9 @@ class ComputersController {
                 `INSERT INTO users (login, password, role) VALUES ($1, $2, $3) RETURNING *`,
                 [login, bcrypt.hashSync(password), 'user']
             )
-            return res.json(newUser.rows[0])
+            const newUser_id = newUser.rows[0].id
+            delete newUser['id']
+            return res.json({...newUser.rows[0], user_id: newUser_id})
         }
 
     }
@@ -22,36 +24,27 @@ class ComputersController {
         return res.json(user.rows[0])
     }
 
+
     async loginUser(req, res) {
         const { login, password } = req.body;
-        try {
-            const dbResult = await db.query(`SELECT * FROM users WHERE login = $1`, [login]);
-            if (dbResult.rows.length === 0) {
-                return res.json('fail');
-            }
-            const dbPassword = dbResult.rows[0].password;
-
-            bcrypt.compare(password, dbPassword, (err, result) => {
-                if (err) {
-                    console.log('Some error');
-                    return res.json('fail');
-                }
-                if (result) {
-                    const resObj = {
-                        user_id: dbResult.rows[0].id,
-                        login,
-                        register_data: dbResult.rows[0].register_date,
-                        role: dbResult.rows[0].role
-                    }
-                    return res.json(resObj);
-                } else {
-                    return res.json('fail');
-                }
-            });
-        } catch (error) {
-            console.error('Error logging in:', error);
+        const dbResult = await db.query(`SELECT * FROM users WHERE login = $1`, [login]);
+        if (dbResult.rows.length === 0) {
             return res.json('fail');
         }
+        const dbPassword = dbResult.rows[0].password;
+        bcrypt.compare(password, dbPassword, (err, result) => {
+            if (result) {
+                const resObj = {
+                    user_id: dbResult.rows[0].id,
+                    login,
+                    register_data: dbResult.rows[0].register_date,
+                    role: dbResult.rows[0].role
+                }
+                return res.json(resObj);
+            } else {
+                return res.json('fail');
+            }
+        })
     }
 
 }

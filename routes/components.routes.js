@@ -3,7 +3,7 @@ const router = new Router()
 const componentsController = require('../controller/components.conroller')
 
 
-router.get('/components/all/:type', componentsController.getAllComponents)
+router.post('/components/all', componentsController.getCompatibilityComponents)
 router.get('/components/:type/:id', componentsController.getPrice)
 
 
