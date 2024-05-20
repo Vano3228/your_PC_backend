@@ -34,13 +34,13 @@ class ComponentsController {
             cooler_height: compatibilityObj['cooler_height'] && `cooler_max_height >= ${compatibilityObj['cooler_height']}`
         } : {}
         const hard_driveFormats = type === 'hard_drive' ? {
-            motherboard_m2_slots: compatibilityObj['motherboard_m2_slots'] && `((interface = 'm2' AND ${compatibilityObj['motherboard_m2_slots']} > 0) OR (interface = 'SATA'))`
+            motherboard_m2_slots: compatibilityObj['motherboard_m2_slots'] && `((interface = 'M.2' AND ${compatibilityObj['motherboard_m2_slots']} > 0) OR (interface = 'SATA'))`
         } : {}
         const motherboardFormats = type === 'motherboard' ? {
             cpu_socket: compatibilityObj['cpu_socket'] && `socket = '${compatibilityObj['cpu_socket']}'`,
             cooler_socket: compatibilityObj['cooler_socket'] && `strpos('${compatibilityObj['cooler_socket']}', socket ) > 0 `,
             pc_case_mb_types: compatibilityObj['pc_case_mb_types'] && `strpos('${compatibilityObj['pc_case_mb_types']}', size_type) > 0`,
-            hard_drive_interface: compatibilityObj['hard_drive_interface'] && `((m2_slots > 0 AND '${compatibilityObj['hard_drive_interface']}' = 'm2') OR ('${compatibilityObj['hard_drive_interface']}' = 'SATA'))`,
+            hard_drive_interface: compatibilityObj['hard_drive_interface'] && `((m2_slots > 0 AND '${compatibilityObj['hard_drive_interface']}' = 'M.2') OR ('${compatibilityObj['hard_drive_interface']}' = 'SATA'))`,
             ram_memory_type: compatibilityObj['ram_memory_type'] && `ram_type = '${compatibilityObj['ram_memory_type']}'`
         } : {}
         const coolerFormats = type === 'cooler' ? {
@@ -55,5 +55,6 @@ class ComponentsController {
         return(res.json(allComponentsReq.rows))
     }
 }
+
 
 module.exports = new ComponentsController()
